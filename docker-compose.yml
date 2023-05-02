@@ -1,0 +1,40 @@
+version: '3'
+services:
+  airflow:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./dags:/usr/local/airflow/dags
+      - ./data:/usr/local/airflow/data
+      - ./entrypoint.sh:/usr/local/airflow/entrypoint.sh
+      - ./config.py:/usr/local/airflow/config.py   
+    entrypoint: /entrypoint
+    environment:
+      - AIRFLOW_USERNAME=daniel
+      - AIRFLOW_PASSWORD=admin123
+      - AIRFLOW__WEBSERVER__AUTHENTICATE=True
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - POSTGRES_USER=airflow
+      - POSTGRES_PASSWORD=airflow
+      - POSTGRES_DB=airflow
+    depends_on:
+      - postgres
+    command: ["airflow", "webserver"]
+  postgres:
+    image: postgres:14
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+  airflow-init:
+    image: apache/airflow:2.2.3
+    command: airflow db init
+    depends_on:
+      - postgres
+    environment:
+      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres/airflow
